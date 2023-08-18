@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 ///   - Simple to implement and use.
 ///
 /// Cons:
-///   - The user must still manually keep/control the lock and the value.
+///   - The user must still manually keep/control the lock and the value which is error-prone.
 ///
 
 pub struct SpinLock {

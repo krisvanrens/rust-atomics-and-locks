@@ -21,14 +21,17 @@ fn main() {
 
     let mut s3 = SpinLockGuard::new(42);
     {
-        let mut g3 = s3.lock();
+        let mut g3a = s3.lock();
         thread::sleep(time::Duration::from_millis(100));
-        let v3 = &mut *g3;
+        let v3 = &mut *g3a;
         *v3 = 23;
         println!("v3 = {v3}");
     }
     {
-        let g4 = s3.lock();
-        println!("v3 = {}", *g4);
+        let g3b = s3.lock();
+        println!("v3 = {}", *g3b);
     }
+
+    let g3c = s3.lock();
+    drop(g3c); // Explicitly dropping the guard consumes it.
 }
