@@ -1,6 +1,14 @@
 use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+///
+/// Pros:
+///   - Actually wraps the value that is locked.
+///
+/// Cons:
+///   - Unsafe interface.
+///
+
 pub struct SpinLock<T> {
     locked: AtomicBool,
     value: UnsafeCell<T>,

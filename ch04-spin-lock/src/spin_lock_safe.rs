@@ -1,5 +1,13 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
+///
+/// Pros:
+///   - Simple to implement and use.
+///
+/// Cons:
+///   - The user must still manually keep/control the lock and the value.
+///
+
 pub struct SpinLock {
     locked: AtomicBool,
 }
