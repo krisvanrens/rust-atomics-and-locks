@@ -30,7 +30,8 @@ impl<T> SpinLock<T> {
         unsafe { &mut *self.value.get() }
     }
 
-    /// Safety: this function is unsafe, as there may be references to self.value outside of the critical section.
+    /// # Safety
+    /// This function is unsafe, as there may be references to self.value outside of the critical section.
     pub unsafe fn unlock(&self) {
         self.locked.store(false, Ordering::Release);
     }
