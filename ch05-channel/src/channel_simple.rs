@@ -7,7 +7,7 @@ pub struct Channel<T> {
 }
 
 impl<T> Channel<T> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             queue: Mutex::new(VecDeque::new()),
             ready: Condvar::new(),
