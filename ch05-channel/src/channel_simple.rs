@@ -14,12 +14,12 @@ impl<T> Channel<T> {
         }
     }
 
-    pub fn send(&mut self, value: T) {
+    pub fn send(&self, value: T) {
         self.queue.lock().unwrap().push_back(value);
         self.ready.notify_one();
     }
 
-    pub fn receive(&mut self) -> T {
+    pub fn receive(&self) -> T {
         let mut g = self.queue.lock().unwrap();
         loop {
             if let Some(value) = g.pop_front() {
