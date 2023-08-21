@@ -41,8 +41,18 @@ impl SpinLock {
 
 #[test]
 fn test_spin_lock() {
-    let s = SpinLock::new();
-    s.lock();
-    thread::sleep(Duration::from_millis(100));
-    s.unlock();
+    let l = SpinLock::new();
+
+    thread::scope(|s| {
+        s.spawn(|| {
+            l.lock();
+            thread::sleep(Duration::from_millis(50));
+            l.unlock();
+        });
+
+        s.spawn(|| {
+            l.lock();
+            l.unlock();
+        });
+    });
 }

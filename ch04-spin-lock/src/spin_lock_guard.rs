@@ -15,16 +15,20 @@ use std::{thread, time::Duration};
 ///   - ...
 ///
 
-#[derive(Debug)]
 pub struct SpinLock<T> {
     locked: AtomicBool,
     value: UnsafeCell<T>,
 }
 
-#[derive(Debug)]
+// UnsafeCell is not Sync (it is Send only). However, if 'T' is Send, we can treat the spin lock as Sync.
+unsafe impl<T> Sync for SpinLock<T> where T: Send {}
+
 pub struct Guard<'a, T> {
-    lock: &'a mut SpinLock<T>,
+    lock: &'a SpinLock<T>,
 }
+
+// The Guard, essentially a reference to a spin lock for value type 'T' access, can only be Sync if 'T' is as well.
+unsafe impl<T> Sync for Guard<'_, T> where T: Sync {}
 
 impl<T> Deref for Guard<'_, T> {
     type Target = T;
@@ -36,7 +40,7 @@ impl<T> Deref for Guard<'_, T> {
 
 impl<T> DerefMut for Guard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
-        &mut *self.lock.value.get_mut()
+        unsafe { &mut *self.lock.value.get() }
     }
 }
 
@@ -54,7 +58,7 @@ impl<T> SpinLock<T> {
         }
     }
 
-    pub fn lock(&mut self) -> Guard<T> {
+    pub fn lock(&self) -> Guard<T> {
         while self.locked.swap(true, Ordering::Acquire) {
             std::hint::spin_loop();
         }
@@ -65,19 +69,31 @@ impl<T> SpinLock<T> {
 
 #[test]
 fn test_spin_lock() {
-    let mut s = SpinLock::new(42);
-    {
-        let mut ga = s.lock();
-        thread::sleep(Duration::from_millis(100));
-        let v = &mut *ga;
-        *v = 23;
-        assert_eq!(*ga, 23);
-    }
-    {
-        let gb = s.lock();
-        assert_eq!(*gb, 23);
-    }
+    let l = SpinLock::new(42);
 
-    let gc = s.lock();
-    drop(gc); // Explicitly dropping the guard consumes it.
+    thread::scope(|s| {
+        s.spawn(|| {
+            let mut g = l.lock();
+            *g = 23;
+            thread::sleep(Duration::from_millis(50));
+        });
+
+        s.spawn(|| {
+            thread::sleep(Duration::from_millis(50));
+            let g = l.lock();
+            assert_eq!(*g, 23);
+
+            thread::scope(|ss| {
+                ss.spawn(|| {
+                    println!("{}", *g);
+                });
+                ss.spawn(|| {
+                    println!("{}", *g);
+                });
+            });
+        });
+    });
+
+    let g = l.lock();
+    drop(g); // Explicitly dropping the guard consumes it.
 }
