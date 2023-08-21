@@ -12,12 +12,13 @@ pub struct Channel<T> {
     ready: AtomicBool,
 }
 
-// Tell the compiler our type is Sync as long as T is Send (required because UnsafeCell is neither).
+// Tell the compiler our type is Sync as long as T is Send (required because UnsafeCell is Send only).
 //
 // Obviously we need Sync to be able to refer to each side of the channel from different thread contexts. Also 'T' needs
 //  to be Send because it will be transmitted over the channel, potentially to another thread context. Under the
 //  assumption that the user is a good user, and first checks 'is_ready' before receiving the data from the channel, all
-//  is fine (otherwise uninitialized data may be read).
+//  is fine (otherwise uninitialized data may be read). We don't require Sync for T, because we only allow one thread
+//  context at a time to access the receiving end of the channel.
 //
 unsafe impl<T> Sync for Channel<T> where T: Send {}
 
