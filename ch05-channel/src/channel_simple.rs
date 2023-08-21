@@ -1,6 +1,9 @@
 use std::collections::VecDeque;
 use std::sync::{Condvar, Mutex};
 
+#[cfg(test)]
+use std::thread;
+
 pub struct Channel<T> {
     queue: Mutex<VecDeque<T>>,
     ready: Condvar,
@@ -35,4 +38,19 @@ impl<T> Default for Channel<T> {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[test]
+fn test_channel() {
+    let c = Channel::<i32>::new();
+
+    thread::scope(|s| {
+        s.spawn(|| {
+            c.send(42);
+        });
+
+        s.spawn(|| {
+            assert_eq!(c.receive(), 42);
+        });
+    });
 }

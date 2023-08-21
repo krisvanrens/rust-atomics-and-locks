@@ -2,6 +2,9 @@ use std::cell::UnsafeCell;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+#[cfg(test)]
+use std::{thread, time::Duration};
+
 ///
 /// Pros:
 ///   - Fully safe interface.
@@ -58,4 +61,23 @@ impl<T> SpinLock<T> {
 
         Guard { lock: self }
     }
+}
+
+#[test]
+fn test_spin_lock() {
+    let mut s = SpinLock::new(42);
+    {
+        let mut ga = s.lock();
+        thread::sleep(Duration::from_millis(100));
+        let v = &mut *ga;
+        *v = 23;
+        assert_eq!(*ga, 23);
+    }
+    {
+        let gb = s.lock();
+        assert_eq!(*gb, 23);
+    }
+
+    let gc = s.lock();
+    drop(gc); // Explicitly dropping the guard consumes it.
 }

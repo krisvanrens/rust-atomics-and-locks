@@ -1,5 +1,8 @@
 use std::sync::{Condvar, Mutex};
 
+#[cfg(test)]
+use std::thread;
+
 pub struct Channel<T> {
     value: Mutex<Option<T>>,
     ready: Condvar,
@@ -28,4 +31,19 @@ impl<T> Channel<T> {
             g = self.ready.wait(g).unwrap();
         }
     }
+}
+
+#[test]
+fn test_channel() {
+    let c = Channel::<i32>::new();
+
+    thread::scope(|s| {
+        s.spawn(|| {
+            c.send(42);
+        });
+
+        s.spawn(|| {
+            assert_eq!(c.receive(), 42);
+        });
+    });
 }
