@@ -22,6 +22,13 @@ pub struct Channel<T> {
 //
 unsafe impl<T> Sync for Channel<T> where T: Send {}
 
+//
+// An acquire/release memory ordering between the load (in 'is_ready') and the store (in 'send') respectively, assures
+//  there is a happens before relationship between 'send'/'is_ready'. In this unsafe interface, 'receive' is completely
+//  unaffected because we assume 'is_ready' was called before 'receive' was called. This assumption is a contract bet-
+//  ween the code and the user of the code, it is not enforced by the compiler.
+//
+
 impl<T> Channel<T> {
     pub const fn new() -> Self {
         Self {

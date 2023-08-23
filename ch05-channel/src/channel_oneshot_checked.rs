@@ -25,6 +25,11 @@ impl<T> Channel<T> {
         }
     }
 
+    //
+    // A relaxed memory ordering here is fine, because 'send' is the only place where it is used. A relaxed memory
+    //  ordering only guarantees total modification order of all operations. The only time a swap actually changes the
+    //  value of 'occupied', is upon the first call of 'send'.
+    //
     pub fn send(&self, value: T) {
         if self.occupied.swap(true, Ordering::Relaxed) {
             panic!("calling send on an occupied channel");
