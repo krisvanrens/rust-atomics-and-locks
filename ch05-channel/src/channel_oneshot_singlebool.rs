@@ -17,7 +17,7 @@ pub struct Channel<T> {
     state: AtomicU8,
 }
 
-// Tell the compiler our type is Sync as long as T is Send (required because UnsafeCell is not Send only).
+// Tell the compiler our type is Sync as long as T is Send (required because UnsafeCell is Send only).
 unsafe impl<T> Sync for Channel<T> where T: Send {}
 
 impl<T> Channel<T> {
