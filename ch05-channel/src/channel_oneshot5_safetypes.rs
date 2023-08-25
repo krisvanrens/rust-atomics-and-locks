@@ -8,7 +8,7 @@ use std::{
 };
 
 #[cfg(test)]
-use std::thread;
+use std::{thread, time::Duration};
 
 struct Channel<T> {
     value: UnsafeCell<MaybeUninit<T>>,
@@ -77,7 +77,7 @@ fn test_channel() {
 
         sc.spawn(|| {
             while !r.is_ready() {
-                thread::park()
+                thread::sleep(Duration::from_millis(10));
             }
 
             assert_eq!(r.receive(), 42);
