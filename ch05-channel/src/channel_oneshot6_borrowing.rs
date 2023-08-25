@@ -32,7 +32,7 @@ impl<T> Channel<T> {
     // Here we exclusively borrow ourselves, to tie the lifetime of the channel to the existence of the sender and the
     //  receiver. This means it is not possible to borrow or move the channel as long as the sender/receiver exists.
     //
-    pub fn split<'a>(&'a mut self) -> (Sender<'a, T>, Receiver<'a, T>) {
+    pub fn split(&mut self) -> (Sender<'_, T>, Receiver<'_, T>) {
         //
         // To allow for channel re-use, we must reinitialize ourselves after use, just to be sure.
         //
