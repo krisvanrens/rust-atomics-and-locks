@@ -4,4 +4,5 @@ pub mod channel_oneshot3_checked;
 pub mod channel_oneshot4_singlebool;
 pub mod channel_oneshot5_safetypes;
 pub mod channel_oneshot6_borrowing;
+pub mod channel_oneshot7_blocking;
 pub mod channel_simple;
