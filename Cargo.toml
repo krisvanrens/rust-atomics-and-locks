@@ -1,5 +1,5 @@
 [package]
-name = "ch05-channel"
+name = "rust-atomics-and-locks"
 version = "0.1.0"
 edition = "2021"
 
