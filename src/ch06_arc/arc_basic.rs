@@ -29,6 +29,15 @@ impl<T> Arc<T> {
     fn data(&self) -> &ArcData<T> {
         unsafe { &self.state.as_ref() }
     }
+
+    pub fn get_mut(arc: &mut Self) -> Option<&mut T> {
+        if arc.data().ref_count.load(Ordering::Relaxed) == 1 {
+            fence(Ordering::Acquire);
+            unsafe { Some(&mut arc.state.as_mut().data) }
+        } else {
+            None
+        }
+    }
 }
 
 impl<T> Clone for Arc<T> {
@@ -74,7 +83,9 @@ fn test_arc() {
     }
 
     let a1 = Arc::new((42, DropCounter));
-    let a2 = a1.clone();
+    let mut a2 = a1.clone();
+
+    assert!(Arc::get_mut(&mut a2).is_none());
 
     let t = thread::spawn(move || {
         assert_eq!(a1.0, 42);
@@ -82,7 +93,11 @@ fn test_arc() {
 
     assert_eq!(a2.0, 42);
 
+    assert!(Arc::get_mut(&mut a2).is_none());
+
     t.join().unwrap();
+
+    assert!(Arc::get_mut(&mut a2).is_some());
 
     assert_eq!(DROP_COUNT.load(Ordering::Relaxed), 0);
 
