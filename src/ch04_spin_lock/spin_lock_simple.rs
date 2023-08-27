@@ -9,7 +9,7 @@ use std::{thread, time::Duration};
 ///
 /// Cons:
 ///   - The user must still manually keep/control the lock and the value which is error-prone.
-/// 
+///
 /// Notes:
 ///   - By using release memory ordering on the store in 'unlock', and acquire memory ordering in the load part of the
 ///      swap operation in 'lock', we assure there is a happens-before relation on 'lock'/'unlock'.
