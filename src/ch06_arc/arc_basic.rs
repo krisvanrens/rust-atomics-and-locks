@@ -30,6 +30,11 @@ impl<T> Arc<T> {
         unsafe { &self.state.as_ref() }
     }
 
+    //
+    // Implement mutable dereference using an associated function. Using a mutable reference of the argument Arc, the
+    //  lifetime of the associated instance is borrowed, making sure no other borrows occur during the lifetime of the
+    //  (optional) return value.
+    //
     pub fn get_mut(arc: &mut Self) -> Option<&mut T> {
         if arc.data().ref_count.load(Ordering::Relaxed) == 1 {
             fence(Ordering::Acquire);
