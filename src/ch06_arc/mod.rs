@@ -1,2 +1,3 @@
-pub mod arc_basic;
-pub mod arc_weak;
+pub mod arc1_basic;
+pub mod arc2_weak;
+pub mod arc3_optimized;
