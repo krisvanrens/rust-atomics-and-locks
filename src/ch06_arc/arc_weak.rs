@@ -50,6 +50,16 @@ impl<T> Arc<T> {
             None
         }
     }
+
+    //
+    // I think it is nicer to consume the Arc<T> from which the Weak<T> is created, by taking 'self' by value. Perhaps
+    //  this is a slightly obnoxious interface, but it makes sense given the function name. It does break the symmetry
+    //  with Weak<T>::upgrade, which returns an Option<Arc<T>>. Also, using the consuming interface, it is harder for a
+    //  user to get one or multiple Weak<T>'s from an Arc<T>. Oh well.
+    //
+    pub fn downgrade(&self) -> Weak<T> {
+        self.weak.clone()
+    }
 }
 
 impl<T> Clone for Arc<T> {
@@ -92,6 +102,29 @@ impl<T> Weak<T> {
     fn data(&self) -> &ArcData<T> {
         unsafe { &self.state.as_ref() }
     }
+
+    pub fn upgrade(&self) -> Option<Arc<T>> {
+        let mut ref_count = self.data().arc_ref_count.load(Ordering::Relaxed);
+        loop {
+            if ref_count == 0 {
+                return None;
+            }
+
+            assert!(ref_count < usize::MAX);
+
+            if let Err(e) = self.data().arc_ref_count.compare_exchange_weak(
+                ref_count,
+                ref_count + 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                ref_count = e;
+                continue;
+            }
+
+            return Some(Arc { weak: self.clone() });
+        }
+    }
 }
 
 impl<T> Clone for Weak<T> {
@@ -130,24 +163,38 @@ fn test_arc() {
 
     let a1 = Arc::new((42, DropCounter));
     let mut a2 = a1.clone();
+    let w1 = a1.downgrade();
+    let w2 = a1.downgrade();
 
     assert!(Arc::get_mut(&mut a2).is_none());
 
     let t = thread::spawn(move || {
-        assert_eq!(a1.0, 42);
+        let arc = w1.upgrade().unwrap();
+        assert_eq!(arc.0, 42);
     });
 
-    assert_eq!(a2.0, 42);
+    assert_eq!(a1.0, 42);
+    assert!(w2.upgrade().is_some());
 
     assert!(Arc::get_mut(&mut a2).is_none());
 
     t.join().unwrap();
 
-    assert!(Arc::get_mut(&mut a2).is_some());
+    assert_eq!(DROP_COUNT.load(Ordering::Relaxed), 0);
+
+    drop(a1);
 
     assert_eq!(DROP_COUNT.load(Ordering::Relaxed), 0);
+    assert!(w2.upgrade().is_some());
+    assert!(Arc::get_mut(&mut a2).is_none());
+
+    drop(w2);
+
+    assert!(Arc::get_mut(&mut a2).is_some());
+
+    let w3 = a2.downgrade();
 
     drop(a2);
 
-    assert_eq!(DROP_COUNT.load(Ordering::Relaxed), 1);
+    assert!(w3.upgrade().is_none());
 }
