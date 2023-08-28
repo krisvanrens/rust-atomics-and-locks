@@ -105,7 +105,7 @@ impl<T> Weak<T> {
                 return None;
             }
 
-            assert!(ref_count < usize::MAX);
+            assert!(ref_count <= usize::MAX / 2);
 
             if let Err(e) = self.data().arc_ref_count.compare_exchange_weak(
                 ref_count,
